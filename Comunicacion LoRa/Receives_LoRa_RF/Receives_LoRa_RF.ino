@@ -1,24 +1,28 @@
-/0/Librerias necesarias
+//Librerias necesarias
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <SPI.h>
 #include <LoRa.h>
 #include <ArduinoJson.h>
-#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/Open_Sans_SemiBold_12.h>
+#include "logo.h"
 
 
 /***************LoRa Radio****************/
 
 // SPI LoRa Radio
-#define LORA_SCK 5        // GPIO5 - SX1276 SCK
-#define LORA_MISO 19     // GPIO19 - SX1276 MISO
-#define LORA_MOSI 27    // GPIO27 -  SX1276 MOSI
-#define LORA_CS 18     // GPIO18 -   SX1276 CS
-#define LORA_RST 14   // GPIO14 -    SX1276 RST
+#define LORA_SCK 5        
+#define LORA_MISO 19   
+#define LORA_MOSI 27  
+#define LORA_CS 18     
+#define LORA_RST 14   
 #define LORA_IRQ 26 
 
-//Banda LoRa - ISM en Región 915Mhz
-#define BAND 915E6
+//Banda LoRa - ISM en Región 433Mhz
+#define BAND 433E6
 
 // Mensaje a enviar por direcciones
 byte dir_local   = 0xFE; // Dispositivo  1
@@ -35,8 +39,8 @@ byte   packetstatus = 0;
 /**************Cliente HTTP**************/
 
 //Datos del WiFi
-const char* ssid     = "Morelospver";
-const char* password = "45452513";
+const char* ssid     = "SEMARD";
+const char* password = "SEMARD123";
 
 char* server = "https://semardapi.herokuapp.com/";
 HTTPClient http;
@@ -56,39 +60,47 @@ float temp;
 char Json[64];
 /****************************************/ 
 
-//instancia de la libreria  LiquidCrystal_I2C
-LiquidCrystal_I2C lcd(0x27,128,32);
+/****************Display OLED***************/
 
+//parametros de display
+#define OLED_WIDTH 128 
+#define OLED_HEIGHT 64 
+#define OLED_ADRESS 0x3C
 
-//variable para configurar led de la placa
-const int indicatorLED = LED_BUILTIN;
+//definiendo pines para comunicacion I2C
+#define OLED_SDA 21
+#define OLED_SCL 22
+
+Adafruit_SSD1306 display(OLED_WIDTH,OLED_HEIGHT, &Wire, LORA_RST);
+
+/******************************************/
 
 void setup() {
    Serial.begin(115200);
-  Serial.println("LoRa receptor");
- 
-  //indicador led 
-  pinMode(indicatorLED, OUTPUT);
+   Serial.println("LoRa receptor");
 
- //configuracion de display  lcd
-  lcd.init();
-  lcd.backlight();
-   //Configurar conexion
+   //Configurar display
+
+   Wire.setPins(OLED_SDA,OLED_SCL);
+   Wire.begin(); 
+   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADRESS);
+   display.setFont(&Open_Sans_SemiBold_12);
+   display.setTextSize(1);
+   display.setTextColor(WHITE);
+   display.clearDisplay(); 
+   display.drawBitmap(10,0 , semard, LOGO_WIDTH,LOGO_HEIGHT, WHITE);
+   display.display();  
+   delay(2000);
+ 
+  //Configurar conexion
   LoRaInit();
 
-  lcd.clear();
-   lcd.setCursor(0,0);
-   lcd.print("LoRa iniciado ");
-  delay(500);
   //Iniciar el WiFi
   wifiInit();
- delay(500);
 }
 
 void loop() {
   
-  digitalWrite(indicatorLED, LOW);
-
   int messageRec = LoRa.parsePacket();
 
   if(messageRec !=0){
@@ -116,26 +128,11 @@ void loop() {
             hum =  doc["humidity"];
             temp =  doc["temperature"];
 
-            lcd.clear();
-            lcd.setCursor(0,0);
-            lcd.print("Humedad: ");
-            lcd.setCursor(8,0);
-            lcd.print(hum);
-            lcd.setCursor(12,0);
-            lcd.print("% ");
-            
-            lcd.setCursor(0,1);
-            lcd.print("Temp:  ");
-            lcd.setCursor(5,1);
-            lcd.print(temp);
-            lcd.setCursor(12,1);
-            lcd.print("C");
 
             serializeJson(doc, Json); //Para poder mandar el formato Json guardado en doc, se serializa y se guarda en la variable Json
 
             sendDataserver();
       
-      digitalWrite(indicatorLED, HIGH);
   }/*else{
     Serial.println("No se recibio nada");
              lcd.clear();
@@ -158,15 +155,20 @@ void LoRaInit(){
   if (!LoRa.begin(BAND)) {
     Serial.println("Error al iniciar LoRa");
     
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Error al iniciar LoRa");
+    display.clearDisplay(); 
+    display.setCursor(0, 0);
+    display.println("Error al iniciar LoRa");
     while (1);
   }
 
- LoRa.setSpreadingFactor(12); //factor de dispersion
-  LoRa.setTxPower(14, PA_OUTPUT_RFO_PIN);
+  LoRa.setSpreadingFactor(10); //factor de dispersion
   LoRa.setSyncWord(0xC2);
+
+    display.clearDisplay(); 
+    display.setCursor(0, 0);
+    display.print("LoRa inicado exitosamente");
+    display.display();
+    delay(1000);
 } 
 
 //Función para conectarse al WiFi
@@ -174,14 +176,13 @@ void wifiInit() {
     Serial.print("Conectándose a ");
     Serial.println(ssid);
 
-     lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Conectandose a");
-      lcd.setCursor(0,1);
-      lcd.print("red  ");
-      lcd.setCursor(4,1);
-      lcd.print(ssid);
-      
+    display.clearDisplay(); 
+    display.setCursor(128, 0);
+    display.print("Conectandose a red ");
+    display.setCursor(119, 0);
+    display.print(ssid);
+    display.display();
+     
     WiFi.begin(ssid, password);
   
     while (WiFi.status() != WL_CONNECTED) {
@@ -195,13 +196,15 @@ void wifiInit() {
   Serial.println(WiFi.localIP());
   Serial.println("------------------------------------");  
 
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Conexion exitosa");
-      lcd.setCursor(0,1);
-      lcd.print("IP:  ");
-      lcd.setCursor(3,1);
-      lcd.print(WiFi.localIP());
+    display.clearDisplay(); 
+    display.setCursor(128, 0);
+    display.print("Conexion exitosa ");
+    display.setCursor(0, 10);
+    display.print("SSDI: ");
+    display.setCursor(98, 10);
+    display.print(ssid);
+    display.display();
+    delay(1000);
       
 }
 
