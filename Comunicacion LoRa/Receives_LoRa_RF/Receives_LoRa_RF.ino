@@ -7,7 +7,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Fonts/Hack_Nerd_Font_Mono_12.h>
+#include <Fonts/Open_Sans_Regular_11.h>
 #include "logo.h"
 
 
@@ -34,8 +34,8 @@ int packetStatus;
 /**************Cliente HTTP**************/
 
 //Datos del WiFi
-const char* ssid     = "SEMARD";
-const char* password = "SEMARD123";
+const char* ssid     = "Morelospver";
+const char* password = "45452513";
 
 char* server = "https://semardapi.herokuapp.com/";
 HTTPClient http;
@@ -79,7 +79,8 @@ void setup() {
    Wire.setPins(OLED_SDA,OLED_SCL);
    Wire.begin(); 
    display.begin(SSD1306_SWITCHCAPVCC, OLED_ADRESS);
-   display.setFont(&Hack_Nerd_Font_Mono_12);
+   //display.setFont(&DejaVu_Sans_Mono_10);
+   display.setFont(&Open_Sans_Regular_11);
    display.setTextSize(1);
    display.setTextColor(WHITE);
    display.clearDisplay(); 
@@ -119,7 +120,7 @@ void loop() {
             Serial.print("'RSSI:  ");
             Serial.println(LoRa.packetRssi());
               
-            sendReply();
+            //(sendReply();
             
             DeserializationError error = deserializeJson(doc, packet);
 
@@ -167,7 +168,7 @@ void LoRaInit(){
     while (1);
   }
 
-  LoRa.setSpreadingFactor(10); //factor de dispersion
+  LoRa.setSpreadingFactor(12); //factor de dispersion
   LoRa.setSyncWord(0xC2);
   LoRa.setTxPower(14, PA_OUTPUT_RFO_PIN);
   
@@ -185,9 +186,7 @@ void wifiInit() {
 
     display.clearDisplay(); 
     display.setCursor(128, 0);
-    display.print("Conectandose a red ");
-    display.setCursor(119, 0);
-    display.print(ssid);
+    display.print("Conectandose a red "+(String)ssid);
     display.display();
      
     WiFi.begin(ssid, password);
@@ -205,11 +204,9 @@ void wifiInit() {
 
     display.clearDisplay(); 
     display.setCursor(128, 0);
-    display.print("Conexion exitosa ");
-    display.setCursor(128, 10);
-    display.print("SSDI: ");
-    display.setCursor(98, 10);
-    display.print(ssid);
+    display.println("Conexion exitosa ");
+    display.println("SSID: "+ (String)WiFi.SSID());
+    display.println("IP: "+ (String)WiFi.localIP());
     display.display();
     delay(1000);
       

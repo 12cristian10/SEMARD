@@ -77,16 +77,14 @@ void loop() {
     
     serializeJson(doc, Json); //Para poder mandar el formato Json guardado en doc, se serializa y se guarda en la variable Json
 
-    sendData(dir_destination, dir_local, message_Id, Json); //se crea y envia el paqute  conformado por el archivo y las direcciones del receptor y el emisor
+    sendData(dir_receiver, dir_local, Json); //se crea y envia el paqute  conformado por el archivo y las direcciones del receptor y el emisor
     tant = tact; //Se guarda el tiempo en que se ejecutó el if
 
   
      Serial.print("Paquete enviado: ");
-      Serial.print(String(dir_destination,HEX));
+      Serial.print(String(dir_receiver,HEX));
       Serial.print(",");
       Serial.print(String(dir_local,HEX));
-      Serial.print(",");
-      Serial.print(String(message_Id,HEX));
       Serial.print(",");
       Serial.println(Json);
     
@@ -118,7 +116,7 @@ void readData(float& hum, float& temp){
 }
 
 //Funcion para enviar los datos de los sensores
-void sendData(byte destination, byte sender,byte packetID, String packet){
+void sendData(byte receiver, byte sender, String packet){
   
   // espera que el radio esté listo
   // para enviar un paquete
