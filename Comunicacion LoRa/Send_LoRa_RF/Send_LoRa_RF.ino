@@ -9,21 +9,19 @@
 /***************LoRa Radio****************/
 
 // SPI LoRa Radio
-#define LORA_SCK 5        // GPIO5 - SX1276 SCK
-#define LORA_MISO 19     // GPIO19 - SX1276 MISO
-#define LORA_MOSI 27    // GPIO27 -  SX1276 MOSI
-#define LORA_CS 18     // GPIO18 -   SX1276 CS
-#define LORA_RST 14   // GPIO14 -    SX1276 RST
+#define LORA_SCK 5       
+#define LORA_MISO 19    
+#define LORA_MOSI 27   
+#define LORA_CS 18     
+#define LORA_RST 14   
 #define LORA_IRQ 26 
 
-//Banda LoRa - ISM en Región 915Mhz
-#define BAND 915E6
+//Banda LoRa - ISM en Región 433Mhz
+#define BAND 433E6
 
 // Mensaje a enviar por direcciones
-byte dir_local   = 0xCD; // Emisor
-byte dir_destination = 0xFE; //  Receptor
-// identificador de mensaje
-byte message_Id = 0XA1;
+byte dir_local   = 0xCD; //ID de emisor
+byte dir_receiver = 0xFE; //ID de receptor
 /****************************************/
 
 /****************Sensores****************/
@@ -50,13 +48,10 @@ unsigned long tact;
 unsigned long tant = 0;
 long tint = 1000; 
 
-//variable para configurar led de la placa
-const int indicatorLED = LED_BUILTIN;
-
 void setup() {
   
   Serial.begin(115200);
-  //while(!Serial);
+
   Serial.println("LoRa emisor");
   
   //Configurar conexion
@@ -65,15 +60,9 @@ void setup() {
   //Iniciar sensores
   humSensor.begin(); 
   tempSensor.begin();
-
- //indicador led 
-  pinMode(indicatorLED, OUTPUT);
-
 }
 
 void loop() {
-
- digitalWrite(indicatorLED, HIGH);
  
   readData(hum,temp); // Se leen los datos de los sensores de humedad y temperatura 
   
@@ -91,7 +80,6 @@ void loop() {
     sendData(dir_destination, dir_local, message_Id, Json); //se crea y envia el paqute  conformado por el archivo y las direcciones del receptor y el emisor
     tant = tact; //Se guarda el tiempo en que se ejecutó el if
 
-    yield();
   
      Serial.print("Paquete enviado: ");
       Serial.print(String(dir_destination,HEX));
@@ -101,9 +89,7 @@ void loop() {
       Serial.print(String(message_Id,HEX));
       Serial.print(",");
       Serial.println(Json);
-      digitalWrite(indicatorLED, HIGH);
-   
-    yield(); // procesa lora
+    
   }
   
   
@@ -140,15 +126,13 @@ void sendData(byte destination, byte sender,byte packetID, String packet){
    
       Serial.println("Esperando radio disponible...");
    
-    yield();
     delay(100);
   }
   
   // envio del mensaje LoRa
   LoRa.beginPacket();
-  LoRa.write(destination);
+  LoRa.write(receiver);
   LoRa.write(sender);
-  LoRa.write(packetID);
   LoRa.write(packet.length());
   LoRa.print(packet);
   LoRa.endPacket();

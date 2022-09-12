@@ -7,7 +7,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Fonts/Open_Sans_SemiBold_12.h>
+#include <Fonts/Hack_Nerd_Font_Mono_12.h>
 #include "logo.h"
 
 
@@ -25,15 +25,10 @@
 #define BAND 433E6
 
 // Mensaje a enviar por direcciones
-byte dir_local   = 0xFE; // Dispositivo  1
-byte dir_sender =  0xCD; // Inicia Remitente
-
-// identificador de mensaje
-byte   packetID = 0XA1;
-byte   packetstatus = 0;
-  // 0:vacio, 1: nuevo, 2:incompleto
-  // 3:otro destinatario, 4:Broadcast
-  int  packetSize;
+byte dirLocal   = 0xFE; //ID de recepotor
+byte dirSender =  0xCD; //ID de emisor
+int packetStatus;
+ int  packetSize;
 /****************************************/
 
 /**************Cliente HTTP**************/
@@ -76,21 +71,21 @@ Adafruit_SSD1306 display(OLED_WIDTH,OLED_HEIGHT, &Wire, LORA_RST);
 /******************************************/
 
 void setup() {
+  
    Serial.begin(115200);
    Serial.println("LoRa receptor");
 
    //Configurar display
-
    Wire.setPins(OLED_SDA,OLED_SCL);
    Wire.begin(); 
    display.begin(SSD1306_SWITCHCAPVCC, OLED_ADRESS);
-   display.setFont(&Open_Sans_SemiBold_12);
+   display.setFont(&Hack_Nerd_Font_Mono_12);
    display.setTextSize(1);
    display.setTextColor(WHITE);
    display.clearDisplay(); 
    display.drawBitmap(10,0 , semard, LOGO_WIDTH,LOGO_HEIGHT, WHITE);
    display.display();  
-   delay(2000);
+   delay(3000);
  
   //Configurar conexion
   LoRaInit();
@@ -104,18 +99,27 @@ void loop() {
   int messageRec = LoRa.parsePacket();
 
   if(messageRec !=0){
-      receivesData(messageRec);
-      
-            if (packetstatus == 1 && packetID == 0XA1){
-              Serial.println("Paquete recibido: " + packet);
-       
-            }else{
-               Serial.println("Paquete recibido: " + packet);
-               Serial.print("Estado del paquete recibido: ");
-               Serial.println(packetstatus);
-            }
-
-            yield();
+             receivesData(messageRec);
+              
+             switch(packetStatus){
+                case 1:
+                    Serial.println("paquete recibido de manera exitosa ");
+                break;
+                case 2:
+                    Serial.print("Error al recibir paquete: El tamaño enviado no coincide con el recibido ");
+                break;
+                case 3:
+                    Serial.print("Error al recibir paquete : El ID del receptor no coincide con el de este dispositivo ");
+                break;
+                case 4:
+                     Serial.print("Error al recibir paquete : El ID del emisor no coincide con el registrado");
+                break;
+             }
+            Serial.println("Paquete recibido: " + packet);
+            Serial.print("'RSSI:  ");
+            Serial.println(LoRa.packetRssi());
+              
+            sendReply();
             
             DeserializationError error = deserializeJson(doc, packet);
 
@@ -128,23 +132,25 @@ void loop() {
             hum =  doc["humidity"];
             temp =  doc["temperature"];
 
+           display.clearDisplay(); 
+           display.setCursor(128, 0);
+           display.print("Humedad: ");
+           display.setCursor(100, 0);
+           display.print(hum);
+           display.setCursor(128, 10);
+           display.print("Temperatura: ");
+           display.setCursor(80, 10);
+           display.print(temp);
+           display.display();
+           delay(100);
 
+            
             serializeJson(doc, Json); //Para poder mandar el formato Json guardado en doc, se serializa y se guarda en la variable Json
 
             sendDataserver();
       
-  }/*else{
-    Serial.println("No se recibio nada");
-             lcd.clear();
-            lcd.setCursor(0,0);
-            lcd.print("Paquetes recibidos: ");
-            lcd.setCursor(0,1);
-            lcd.print("ninguno ");
-  }*/
+  }
   delay(100);
-  yield();
-
- 
 }
 
 void LoRaInit(){
@@ -156,16 +162,17 @@ void LoRaInit(){
     Serial.println("Error al iniciar LoRa");
     
     display.clearDisplay(); 
-    display.setCursor(0, 0);
+    display.setCursor(128, 0);
     display.println("Error al iniciar LoRa");
     while (1);
   }
 
   LoRa.setSpreadingFactor(10); //factor de dispersion
   LoRa.setSyncWord(0xC2);
-
+  LoRa.setTxPower(14, PA_OUTPUT_RFO_PIN);
+  
     display.clearDisplay(); 
-    display.setCursor(0, 0);
+    display.setCursor(128, 0);
     display.print("LoRa inicado exitosamente");
     display.display();
     delay(1000);
@@ -199,7 +206,7 @@ void wifiInit() {
     display.clearDisplay(); 
     display.setCursor(128, 0);
     display.print("Conexion exitosa ");
-    display.setCursor(0, 10);
+    display.setCursor(128, 10);
     display.print("SSDI: ");
     display.setCursor(98, 10);
     display.print(ssid);
@@ -208,21 +215,25 @@ void wifiInit() {
       
 }
 
-//Funcion para enviar los datos de los sensores
+//Funcion para recibir los datos de los sensores
 void receivesData(int sizep){
 
   if(sizep == 0){
-      packetstatus = 0;
+      packetStatus = 0; //vacio
       return;
   }
 
  byte dir_received = LoRa.read();
 
- if(dir_received == dir_local){
-    dir_sender = LoRa.read();
-    packetID = LoRa.read();
-    packetSize = LoRa.read();
+ if(dir_received == dirLocal){
+    byte dir_senderRec = LoRa.read();
 
+    if(dir_senderRec != dirSender){
+       packetStatus = 4;  //otro emisor
+       return;
+    }
+
+    packetSize = LoRa.read();
     packet ="";
     
      while(LoRa.available()){
@@ -230,15 +241,24 @@ void receivesData(int sizep){
       }
 
       if(packetSize != packet.length()){
-            packetstatus = 2; //tamaño incompleto
+            packetStatus = 2;   //el tamaño no corresponde al enviado
             return;
       }
       
-    packetstatus = 1;
+    packetStatus = 1; //paquete recibido correctamente
   }else{
-           packetstatus = 3; //otro destino
+           packetStatus = 3; //otro destino
             return;
    }  
+}
+
+void sendReply(){
+   LoRa.beginPacket();
+  LoRa.write(dirLocal);
+  LoRa.write(dirSender);
+  LoRa.write(packet.length());
+  LoRa.print("Recibido");
+  LoRa.endPacket();
 }
 
 void sendDataserver() {
