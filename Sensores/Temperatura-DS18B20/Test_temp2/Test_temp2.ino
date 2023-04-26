@@ -1,7 +1,7 @@
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
-OneWire onewire(7);
+OneWire onewire(25);
 DallasTemperature tempSensor(&onewire);
 
 float temp, suma, promTemp, tempCal;

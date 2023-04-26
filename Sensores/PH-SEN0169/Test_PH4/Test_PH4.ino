@@ -45,7 +45,7 @@ void loop() {
   tempAj = readTemperature();
 
   float ph = (-0.018* (((volt*1000)- 1500)/3)) +6.94;
-  float pH_calibrado = (-0.018 * (((volt * 1000) - offset) / 3) + 6.94) +  tempAj;
+  float pH_calibrado = ph + (0.03*(tempAj-25));
 
   Serial.print("Volt: ");
   Serial.println(volt);
@@ -53,6 +53,8 @@ void loop() {
   Serial.println(ph);
     Serial.print("PH CALIBRADO: ");
   Serial.println(pH_calibrado);
+  Serial.print("TEMPERATURA: ");
+  Serial.println(tempAj);
 
   delay(1000);
 }
