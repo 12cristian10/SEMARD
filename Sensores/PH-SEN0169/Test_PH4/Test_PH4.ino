@@ -50,8 +50,8 @@ void loop() {
   Serial.print("Volt: ");
   Serial.println(volt);
   Serial.print("PH: ");
-  Serial.println(ph);
-    Serial.print("PH CALIBRADO: ");
+  //Serial.println(ph);
+  //Serial.print("PH CALIBRADO: ");
   Serial.println(pH_calibrado);
   Serial.print("TEMPERATURA: ");
   Serial.println(tempAj);

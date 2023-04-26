@@ -20,20 +20,18 @@ void setup()
 void loop()
 {
     static unsigned long timepoint = millis();
-    if(millis()-timepoint>1000U){                  //time interval: 1s
+    if(millis()-timepoint>1000U){                  
         timepoint = millis();
-        temperature = readTemperature();         // read your temperature sensor to execute temperature compensation
-        voltage = analogRead(PH_PIN)/4095.0*3300;  // read the voltage
-        phValue = ph.readPH(voltage,25);  // convert voltage to pH with temperature compensation
+        temperature = readTemperature();         
+        voltage = analogRead(PH_PIN)/4095.0*3300;  
+        phValue = ph.readPH(voltage,25);  
         Serial.print("temperature:");
         Serial.print(temperature,1);
         Serial.print("^C  pH:");
         Serial.println(phValue,2);
-        Serial.println(voltage,2);
-        //Serial.println();
 
     }
-    ph.calibration(voltage,temperature);           // calibration process by Serail CMD
+    ph.calibration(voltage,temperature);        
 }
 
 float readTemperature()
