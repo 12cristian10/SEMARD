@@ -23,3 +23,19 @@ Realizar pruebas de integración, compatibilidad, rendimiento entre el equipo Co
 -Realizar pruebas de integración del equipo Core con sensores.
 -Realizar pruebas de desempeño de los diferentes elementos que componen el dispositivo. 
 -Realizar programación del equipo Core que permita maximizar el rendimiento del dispositivo.
+
+## MATERIALES
+-TTGO LORA32
+-SEN0189
+-SEN0161
+-SEN0237
+-SEN0244
+-DFR0300
+-DS18B20
+-ADS1115
+
+##FUNCIONAMIENTO
+
+El código implementado realiza una tarea específica que consiste en leer las señales de los sensores utilizando el ADS1115 cada 7,5 segundos. Cada minuto, se calcula un valor promedio de las lecturas tomadas y se realiza la conversión a valores digitales utilizando fórmulas predefinidas. Estos valores se corresponden con unidades específicas para cada sensor.
+
+Este proceso de lectura y conversión se repite durante 15 minutos, lo que permite obtener una serie de datos representativos. Después de esta etapa, el sistema entra en el modo de sueño profundo durante 45 minutos. Esta característica de bajo consumo de energía es extremadamente útil durante períodos de inactividad, ya que ayuda a lograr un ahorro significativo de energía.
