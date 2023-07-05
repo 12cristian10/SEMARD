@@ -40,9 +40,9 @@ void loop() {
     }*/
 
     //promTemp=suma/10;
-    tempCal = temp - ((tempRef- tempLec)/k);
+    //tempCal = temp - ((tempRef- tempLec)/k);
     Serial.print("Temperatura: ");
-    Serial.print(tempCal);
+    Serial.print(temp);
     Serial.println(" C");
     delay(1000);
 
