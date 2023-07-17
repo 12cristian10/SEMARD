@@ -3,8 +3,16 @@
 #include <DallasTemperature.h>
 #include "DTH_Turbidity.h"
 #include <esp_deep_sleep.h>
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+
 
 Adafruit_ADS1115 ads;  // Objeto para el ADC ADS1115
+
+/*******************GPS*******************/
+SoftwareSerial gpsSerial(15, 12); // Crea un objeto de SoftwareSerial para la comunicación con el GPS
+TinyGPSPlus gps; // Crea un objeto de la librería TinyGPS++
+/*****************************************/
 
 /****************Sensores****************/
 OneWire ds(33);  // Objeto para la comunicación OneWire, conectado al pin 33
@@ -24,9 +32,18 @@ uint32_t readingInterval = 7500, readTime = 900000, sleepTime = 2700000, initial
 
 void setup() {
   Serial.begin(115200);  // Iniciar la comunicación serial
+  gpsSerial.begin(9600); // Inicia la comunicación serial con el GPS
   ads.begin(0X48);        // Inicializar el ADC ADS1115 en la dirección 0X48
-  temp.begin();           // Inicializar el sensor de temperatura
-  
+  temp.begin();           // Inicializar el sensor de temperatura 
+
+  // Configura los pines de alimentación del GPS
+  pinMode(4, OUTPUT); // PWR_CTRL
+  pinMode(16, OUTPUT); // GPS_CTRL
+  digitalWrite(4, HIGH); // Enciende el GPS
+  digitalWrite(16, LOW); // Activa el control del GPS
+
+  delay(2000); // Espera 2 segundos para permitir que el GPS se estabilice
+
 }
 
 void loop() {
@@ -67,7 +84,14 @@ void loop() {
 
       // Imprimir los valores medidos
       Serial.printf("Temperatura: %.2f °C\tPH: %.2f \tEC: %.2f ms/cm\tOD: %d mg/l\tTDS: %d ppm\tTurbidez: %.2f ntu\n",TEMP,PH,EC,OD,TDS,TURB);
-    }
+
+      char gpsData[100]; // Tamaño del buffer ajustable según la longitud del mensaje
+  
+      getGPSInfo(gpsData, sizeof(gpsData));
+
+      if (gpsData[0] != '\0') {
+        Serial.println(gpsData);
+      }
 
     // Actualizar el tiempo inicial
     initialT = currentT;
@@ -129,4 +153,22 @@ int16_t convertTDSUnits(int32_t voltage, float temperature){
   float CoefficientVoltage = (float)voltage / TempCoefficient; // Voltaje corregido con coeficiente de temperatura
   
   return (int16_t)(133.42 * CoefficientVoltage * CoefficientVoltage * CoefficientVoltage - 255.86 * CoefficientVoltage * CoefficientVoltage + 857.39 * CoefficientVoltage) * 0.5; // Cálculo de TDS según la fórmula de ajuste
+}
+
+//funcion que lee los datos de posicion y tiempo de un gps y los decodifica para ser almacenados en un buffer
+void getGPSInfo(char* buffer, size_t bufferSize) {
+  buffer[0] = '\0'; // Inicializa el buffer como una cadena vacía
+  
+  while (gpsSerial.available() > 0) {
+    if (gps.encode(gpsSerial.read())) {
+      if (gps.location.isValid()) {
+        // Formatea la información del GPS y la guarda en el buffer
+        snprintf(buffer, bufferSize, "Latitud: %.6f Longitud: %.6f Fecha: %02d-%02d-%d Hora: %02d:%02d:%02d",
+                 gps.location.lat(), gps.location.lng(),
+                 gps.date.day(), gps.date.month(), gps.date.year(),
+                 gps.time.hour(), gps.time.minute(), gps.time.second());
+        break; // Sale del bucle una vez que se ha obtenido la información
+      }
+    }
+  }
 }

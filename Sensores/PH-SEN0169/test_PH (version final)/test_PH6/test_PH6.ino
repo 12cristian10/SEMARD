@@ -59,9 +59,9 @@ void loop() {
 
     float TempCoefficient =0.198 * (temperature - 25.0); 
     PH = -0.018 * (((float)averageVoltage- 1500)/3) +6.94 + TempCoefficient;
-    PH/=1000;   
+     
         
-    Serial.print(PH,2); 
+    Serial.println(PH,2); 
   }
 }
 

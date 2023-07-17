@@ -7,10 +7,10 @@
 Adafruit_ADS1115 ads;  // Objeto para el ADC ADS1115
 
 /****************Sensores****************/
-OneWire ds(33);  // Objeto para la comunicación OneWire, conectado al pin 33
+OneWire ds(25);  // Objeto para la comunicación OneWire, conectado al pin 33
 DallasTemperature temp(&ds);  // Objeto para el sensor de temperatura Dallas DS18B20
 
-DTH_Turbidity turb(25);  // Objeto para el sensor de turbidez
+DTH_Turbidity turb(14);  // Objeto para el sensor de turbidez
 
 int32_t phValues, ecValues, odValues, tdsValues;  // Variables para sumar los valores de lectura
 int32_t phVoltage, ecVoltage, odVoltage, tdsVoltage;  // Variables para almacenar los valores de voltaje
@@ -41,7 +41,7 @@ void loop() {
     odValues += ads.readADC_SingleEnded(2);  
     tdsValues += ads.readADC_SingleEnded(3); 
     cont++;
-
+    Serial.println(cont);
     if(cont >= numReadings){ // Verificar si se han realizado suficientes lecturas promediadas
 
       // Calcular el voltaje de salida de los sensores y convertir a mV

@@ -3,9 +3,9 @@
 #include <DallasTemperature.h>
 #include <Adafruit_ADS1X15.h>
 
-#define TDS_PIN 0
+#define TDS_PIN 3
 #define ADS1115_ADDRESS 0x48
-#define TEMP_PIN 33
+#define TEMP_PIN 25
 
 const byte numReadings = 20;    
 const float offsetVoltage = 0.38;
