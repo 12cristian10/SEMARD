@@ -3,9 +3,9 @@
 #include <DallasTemperature.h>
 #include <Adafruit_ADS1X15.h>
 
-#define EC_PIN 0
+#define EC_PIN 1
 #define ADS1115_ADDRESS 0x48
-#define TEMP_PIN 33
+#define TEMP_PIN 25
 
 const byte numReadings = 20;    
 unsigned int AnalogSampleInterval = 25,printInterval = 700,tempSampleInterval=850;  
